@@ -11,7 +11,20 @@ import numpy as np
 import gtsam
 import matplotlib.pyplot as plt
 import copy
-import examples as ef #example functions
+import pendulum as pen #example functions
+import pendulum_data
+import MeasFactor
+
+#%%
+
+config, measurements = pendulum_data.get_data()
+
+
+#%%
+
+noise_model = gtsam.noiseModel.Unit.Create(3)
+cf = gtsam.CustomFactor(noise_model, gtsam.KeyVector([0, 1]), MeasFactor.error_func)
+
 
 #%%
 
@@ -62,7 +75,7 @@ x0 = gtsam.Pose2(pose_key(0),0,m.pi/2.)
 
 true_poses = []
 initial_error = S0.dot(np.random.randn(3))
-curr_x = ef.dynamics(x0,0,0,0,add_noise=initial_error)
+curr_x = pen.dynamics(x0,0,0,0,add_noise=initial_error)
 true_poses.append(curr_x)
 
 #While looping through, create measurements as well
@@ -70,7 +83,7 @@ measurements = np.zeros((N,nl))
 
 for ii,curr_meas in enumerate(measurements):
     proc_error = SQ.dot(np.random.randn(3))
-    curr_x = ef.dynamics(curr_x,ef.modulo_idx(V_command,ii), ef.modulo_idx(w_command,ii), dt, add_noise=proc_error)
+    curr_x = pen.dynamics(curr_x,pen.modulo_idx(V_command,ii), pen.modulo_idx(w_command,ii), dt, add_noise=proc_error)
     true_poses.append(curr_x)
     # while here, do measurements
     for jj,lm in enumerate(landmarks):
@@ -87,8 +100,8 @@ graph.add(gtsam.PriorFactorPose2(pose_key(0), x0, prior_noise))
 
 # odometry factors
 for ii in range(N):
-    curr_V = ef.modulo_idx(V_command,ii) * dt
-    curr_w = ef.modulo_idx(w_command,ii) * dt
+    curr_V = pen.modulo_idx(V_command,ii) * dt
+    curr_w = pen.modulo_idx(w_command,ii) * dt
     Vx = curr_V * m.cos(curr_w/2.)
     Vy = curr_V * m.sin(curr_w/2.)
     graph.add(gtsam.BetweenFactorPose2(pose_key(ii),pose_key(ii+1),gtsam.Pose2(Vx,Vy,curr_w),process_noise))
@@ -111,7 +124,7 @@ curr_x=x0
 initial_np = np.zeros((N+1,3))
 initial_np[0] = np.array([curr_x.x(), curr_x.y(), curr_x.theta()])
 for ii in range(N):
-    curr_x = ef.dynamics(curr_x,ef.modulo_idx(V_command,ii), ef.modulo_idx(w_command,ii), dt)
+    curr_x = pen.dynamics(curr_x,pen.modulo_idx(V_command,ii), pen.modulo_idx(w_command,ii), dt)
     initial_estimates.insert(pose_key(ii+1), curr_x)
     initial_np[ii+1] = np.array([curr_x.x(), curr_x.y(), curr_x.theta()])
 
@@ -128,9 +141,9 @@ est_poses=[]
 for ii in range(N):
     est_poses.append(result.atPose2(pose_key(ii)))
 est_poses.append(result.atPose2(pose_key(N)))
-np_est_poses = ef.pose2_list_to_nparray(est_poses)
+np_est_poses = pen.pose2_list_to_nparray(est_poses)
 
-np_true_poses = ef.pose2_list_to_nparray(true_poses)
+np_true_poses = pen.pose2_list_to_nparray(true_poses)
 
 fig = plt.figure()
 
