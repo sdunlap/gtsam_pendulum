@@ -6,13 +6,15 @@ Custom factors for Python have been implemented by ProfFan but have not been mer
 
 Currently, the feature can only be accessed through this branch: ```feature/custom_factor```
 
-I spent 10 hours trying to get optimization working. Originally, I thought I was doing something wrong with my derivatives, so I spent a long time trying various things. In the end, creating the custom factors is pretty straight forward, but there is a low-level bug that causes all ```optimize()``` calls to hang indefinietly. All preexisting unit tests pass, so the problem must be at a lower level that ProfFan has not tested yet. He should not have tried to merge this into ```develop``` without testing optimization first.
+I spent 10 hours trying to get optimization working. Originally, I thought I was doing something wrong with my derivatives, so I spent a long time trying various things.
+
+Creating the custom factors is pretty straight forward, but there is a low-level bug that causes all ```optimize()``` calls to hang indefinietly. All preexisting unit tests pass, so the problem must be at a lower level that ProfFan has not tested yet. 
 
 ## 5 June
 
 At 7am I figured out a workaround (disabling TBB when compiling gtsam). This was mostly luck as ProfFan mentioned briefly in one of his docs that the custom factors won't work with parallel evaluation. TBB is the first thing I found related to parallelization that I could disable.
 
-I found out that at 2am on 5 June, ProfFan pushed a change that fixed the problem I was dealing with. He also added an actual optimization example. His original code only tested the CustomFactor class by comparing it directly to other Factor types. The bug only came up when running a graph optimizer. My guess is he discovered the bug while implementing the optimization example dellaert requested. His note:
+At 2am on 5 June, ProfFan pushed a change that fixed the problem I was dealing with, so my workaround is no longer necessary. He also added an actual optimization example. His original code only tested the CustomFactor class by comparing it directly to other Factor types. The bug only came up when running a graph optimizer. My guess is he discovered the bug while implementing the optimization example dellaert requested. His note:
 ```
 ProfFan commented 5 hours ago
 
@@ -33,11 +35,14 @@ Custom factors are now working, and I have two functional examples besides the o
 
 
 
+
+
 ### Passing measurements to the custom factor
 
 I'm aware of two methods for passing the measurements to the custom factor. 
 
-* ProfFan's method - LocalizationExample.py - This example uses the partial(...) method for passing measurements to the error function.
+* ProfFan's method - LocalizationExample.py - This example uses the functools.partial method for passing measurements to the error function. For each type of custom factor, you just create a new error function with the required arguments.
+
 ``` py
 def error_func(this: gtsam.CustomFactor, v: gtsam.Values, H: Optional[List[np.ndarray]], mx, my):
 	q = v.atPose2(this.keys()[0])
@@ -47,7 +52,9 @@ graph.add(gtsam.CustomFactor(UNARY_NOISE, gtsam.KeyVector([1]), partial(error_fu
 
 ```
 
-My method - UnicycleExample.py - This example uses a python class to store and access the measurements. I'm not entirely sure how scope works for the error functions, but it appears this method works and may be easier to maintain for more compicated systems.
+
+
+* My method - UnicycleExample.py - This example uses a python class to store and access the measurements. I'm not entirely sure how scope works for the error functions, but it appears this method works and may be easier to maintain for more compicated systems.
 
 ``` py
 @dataclass
@@ -63,10 +70,12 @@ class MyCustomPriorFactor:
 		error = self.expected.localCoordinates(x)
         ...
 
-mf = MeasFactor.MyCustomPriorFactor(x0)
+mf = MyCustomPriorFactor(x0)
 graph.add(gtsam.CustomFactor(prior_noise, [pose_key(0)], mf.error_func))
 
 ```
+
+
 
 
 # References
