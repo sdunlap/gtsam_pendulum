@@ -68,16 +68,8 @@ graph.add(gtsam.BetweenFactorPose2(2, 3, odometry, ODOMETRY_NOISE))
 
 UNARY_NOISE = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1]))
 
-mx, my = 0.0, 0.0
-
 graph.add(gtsam.CustomFactor(UNARY_NOISE, gtsam.KeyVector([1]), partial(error_func, mx=0.0, my=0.0)))
-
-mx, my = 2.0, 0.0
-
 graph.add(gtsam.CustomFactor(UNARY_NOISE, gtsam.KeyVector([2]), partial(error_func, mx=2.0, my=0.0)))
-
-mx, my = 4.0, 0.0
-
 graph.add(gtsam.CustomFactor(UNARY_NOISE, gtsam.KeyVector([3]), partial(error_func, mx=4.0, my=0.0)))
 print(f'\nFactor Graph:\n{graph}')
 
