@@ -12,6 +12,12 @@ import os
 
 from dataclasses import dataclass
 
+import gtsam
+from typing import List
+from dataclasses import dataclass
+
+
+
 @dataclass
 class ExpConfig:
 	# Class for holding experimental data (camera info, pendulum radius, etc)
@@ -19,17 +25,27 @@ class ExpConfig:
 	kappa		: float			
 	c_x			: float			
 	c_y			: float			
-	gravity 	: np.recarray	
+	gravity 	: np.ndarray	
 	
 	# Softball is exactly 12 inches in circumference
 	radius  	: float 		= 12*.0254/(2*pi)
 
 	# Air resistance (determined by trial and error)
 	air_res 	: float 		= .125
+
+									# Variamce(dim(int), variance(float))
+	radii_cov 	 : float 		= gtsam.noiseModel.Isotropic.Variance(1, 4.0)
+	center_cov 	 : np.ndarray 	= gtsam.noiseModel.Diagonal.Variances([9.0, 9.0]) 
 	
-	radii_cov 	: float 		= 4.0
-	center_cov 	: np.recarray 	= 9*np.eye(2)
-	Q 			: np.recarray 	= .0001 * np.eye(6)/8
+	combined_cov : np.ndarray 	= gtsam.noiseModel.Diagonal.Variances([9.0, 9.0, 4.0]) 
+
+	#center_cov  : np.ndarray 	= gtsam.noiseModel.Isotropic.Variance(2, 9.0) 
+	Q 			 : np.ndarray 	= gtsam.noiseModel.Isotropic.Variance(6, .0001 / 8)
+
+	# Alternative noise setup
+	#  auto priorNoise = noiseModel::Diagonal::Sigmas(
+    #  Vector3(0.3, 0.3, 0.1));            // 30cm std on x,y, 0.1 rad on theta
+
 
 
 @dataclass
@@ -41,7 +57,7 @@ class Measurement:
 	# measured radius of the pendulum
 	radius 	: float
 	# measured image center of the pendulum (x, y)
-	center	: np.recarray 
+	center	: np.ndarray 
 
 #
 #
@@ -63,7 +79,7 @@ def get_data( data_folder = 'data/collect1' ):
 	gravity = np.array([-avg_accel[0],avg_accel[1],avg_accel[2]])
 
 
-	config = ExpConfig(kappa, c_x, c_y, gravity)
+	config = ExpConfig(kappa=kappa, c_x=c_x, c_y=c_y, gravity=gravity)
 
 	measurements = []
 
@@ -74,9 +90,12 @@ def get_data( data_folder = 'data/collect1' ):
 	radii 	= im_data['radii']
 	centers = im_data['centers']
 
-	assert len(dts) + 1 == len(radii) == len(centers)
+	# Dummy measurement for the last element (should be ignored)
+	dts = np.concatenate((dts, [0.0]))
 
-	for i in range(len(dts)):
+	assert len(dts) == len(radii) == len(centers)
+
+	for i in range(len(radii)):
 		measurements.append(Measurement(dts[i], radii[i], centers[i]))
 
 	return config, measurements

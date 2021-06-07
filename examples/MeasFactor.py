@@ -7,7 +7,6 @@ from dataclasses import dataclass
 
 @dataclass
 class MyCustomPriorFactor:
-	
 	expected : gtsam.Pose2
 	
 	def error_func(self, this: gtsam.CustomFactor, v: gtsam.Values, H: List[np.ndarray]):
@@ -30,12 +29,9 @@ class MyCustomPriorFactor:
 
 
 
-
-
+@dataclass
 class MyCustomFactor:
-
-	def __init__(self, expected) -> None:
-		self.expected = expected
+	expected : gtsam.Pose2
 
 	def error_func(self, this: gtsam.CustomFactor, v: gtsam.Values, H: List[np.ndarray]):
 		# Get the variable values from `v`
@@ -61,12 +57,11 @@ class MyCustomFactor:
 
 
 
-
+@dataclass
 class MyCustomUnaryFactor:
 
-	def __init__(self, x, y) -> None:
-		self.mx = x
-		self.my = y
+	mx : float
+	my : float
 
 	def error_func(self, this: gtsam.CustomFactor, v: gtsam.Values, H: List[np.ndarray]):
 		# Get the variable values from `v`

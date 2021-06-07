@@ -11,9 +11,10 @@ import numpy as np
 import gtsam
 import matplotlib.pyplot as plt
 import copy
-import pendulum as pen #example functions
+import unicycle as un #example functions
 
 import MeasFactor
+import time
 
 #%%
 
@@ -55,7 +56,9 @@ landmark_locs = np.random.rand(nl,2)*50. - 25
 
 landmarks =[]
 for curr_lm in landmark_locs:
-	landmarks.append(gtsam.Point2(curr_lm))
+	# Either method works
+	#landmarks.append(gtsam.Point2(curr_lm))
+	landmarks.append(curr_lm)
 
 ## Generate the truth data and measurements first
 N = round(60/dt) #number of timesteps forward (there will be N+1 poses)
@@ -64,7 +67,7 @@ x0 = gtsam.Pose2(pose_key(0),0,m.pi/2.)
 
 true_poses = []
 initial_error = S0.dot(np.random.randn(3))
-curr_x = pen.dynamics(x0,0,0,0,add_noise=initial_error)
+curr_x = un.dynamics(x0,0,0,0,add_noise=initial_error)
 true_poses.append(curr_x)
 
 #While looping through, create measurements as well
@@ -72,7 +75,7 @@ measurements = np.zeros((N,nl))
 
 for ii,curr_meas in enumerate(measurements):
 	proc_error = SQ.dot(np.random.randn(3))
-	curr_x = pen.dynamics(curr_x,pen.modulo_idx(V_command,ii), pen.modulo_idx(w_command,ii), dt, add_noise=proc_error)
+	curr_x = un.dynamics(curr_x,un.modulo_idx(V_command,ii), un.modulo_idx(w_command,ii), dt, add_noise=proc_error)
 	true_poses.append(curr_x)
 	# while here, do measurements
 	for jj,lm in enumerate(landmarks):
@@ -93,8 +96,8 @@ graph.add(gtsam.CustomFactor(prior_noise, [pose_key(0)], mf.error_func))
 
 # odometry factors
 for ii in range(N):
-	curr_V = pen.modulo_idx(V_command,ii) * dt
-	curr_w = pen.modulo_idx(w_command,ii) * dt
+	curr_V = un.modulo_idx(V_command,ii) * dt
+	curr_w = un.modulo_idx(w_command,ii) * dt
 	Vx = curr_V * m.cos(curr_w/2.)
 	Vy = curr_V * m.sin(curr_w/2.)
 
@@ -102,6 +105,7 @@ for ii in range(N):
 	mf = MeasFactor.MyCustomFactor(gtsam.Pose2(Vx,Vy,curr_w))
 	graph.add(gtsam.CustomFactor(process_noise, keys, mf.error_func))
 
+	#graph.add(gtsam.BetweenFactorPose2(pose_key(ii),pose_key(ii+1),gtsam.Pose2(Vx,Vy,curr_w),process_noise))
 
 # measurement factors
 for ii,meas in enumerate(measurements):
@@ -121,22 +125,38 @@ curr_x=x0
 initial_np = np.zeros((N+1,3))
 initial_np[0] = np.array([curr_x.x(), curr_x.y(), curr_x.theta()])
 for ii in range(N):
-	curr_x = pen.dynamics(curr_x,pen.modulo_idx(V_command,ii), pen.modulo_idx(w_command,ii), dt)
+	curr_x = un.dynamics(curr_x,un.modulo_idx(V_command,ii), un.modulo_idx(w_command,ii), dt)
 	initial_estimates.insert(pose_key(ii+1), curr_x)
 	initial_np[ii+1] = np.array([curr_x.x(), curr_x.y(), curr_x.theta()])
 
-## Everything should be set up. Now to optimize
-parameters = gtsam.GaussNewtonParams()
-parameters.setMaxIterations(10)
-parameters.setVerbosity('ERROR')
-optimizer = gtsam.GaussNewtonOptimizer(graph, initial_estimates, parameters)
+
+
+print('Starting trial')
+
+num_trials = 5
+
+start_time = time.time()
+last_time = start_time
+
+for i in range(0, num_trials):
+	## Everything should be set up. Now to optimize
+	parameters = gtsam.GaussNewtonParams()
+	parameters.setMaxIterations(10)
+	#parameters.setVerbosity('ERROR')
+	optimizer = gtsam.GaussNewtonOptimizer(graph, initial_estimates, parameters)
+	result = optimizer.optimize()
+
+	print(f'Trial {i+1} complete after {time.time() - last_time} seconds')
+	last_time = time.time()
+
+elapsed = time.time() - start_time
+
+print(f'Average time to optimize: {elapsed/num_trials :.03f} seconds')
+
 
 #optimizer = gtsam.LevenbergMarquardtOptimizer(graph, initial_estimates)
 
-
-print('begin optimize')
-result = optimizer.optimize()
-print('end optimize')
+exit()
 
 
 #%%  Plot the results
@@ -145,9 +165,9 @@ est_poses=[]
 for ii in range(N):
 	est_poses.append(result.atPose2(pose_key(ii)))
 est_poses.append(result.atPose2(pose_key(N)))
-np_est_poses = pen.pose2_list_to_nparray(est_poses)
+np_est_poses = un.pose2_list_to_nparray(est_poses)
 
-np_true_poses = pen.pose2_list_to_nparray(true_poses)
+np_true_poses = un.pose2_list_to_nparray(true_poses)
 
 fig = plt.figure()
 

@@ -11,7 +11,6 @@ Author: Frank Dellaert
 '''
 # pylint: disable=invalid-name, E1101
 
-#%%
 from __future__ import print_function
 
 import numpy as np
@@ -94,14 +93,8 @@ optimizer = gtsam.LevenbergMarquardtOptimizer(graph, initial, params)
 
 before = optimizer.values()
 
+result = optimizer.optimize()
 
-optimizer.optimize()
-
-
-
-result = optimizer.values()
-
-#result = optimizer.optimizeSafely()
 print(f'Initial values:\n{before}')
 print(f'Final values:\n{result}')
 
