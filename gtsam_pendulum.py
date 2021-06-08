@@ -9,9 +9,6 @@
 import math as m
 import numpy as np
 import gtsam
-import matplotlib.pyplot as plt
-import copy
-import pendulum as pen #example functions
 import pendulum_data as pdata
 import pendulum_factors as pfactors
 import pendulum_model as pmodel
