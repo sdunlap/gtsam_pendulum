@@ -3,7 +3,7 @@
 
 # Implementation
 
-I implemented the following factor graph using gtsam. For measurement factors, I used two different, but equivalent, methods. First, I kept the two types of measurements separate, so there were three custom factor types (2 for measurements and one for dynamics). After performing the speed tests, I was curious to see the impact of the extra calls to python, so I made a combined measurement factor. Although this did improve speed slightly, the difference was not as significant as I expected. Both methods are still available and can be selected by setting:
+For the main example, I implemented the pendulum lab developed by cntaylor using gtsam's new custom factors and the following factor graph. For measurement factors, I used two different, but equivalent, methods. First, I kept the two types of measurements separate, so there were three custom factor types (2 for measurements and one for dynamics). After performing the speed tests, I was curious to see the impact of the extra calls to python, so I made a combined measurement factor. Although this did improve speed slightly, the difference was not as significant as I expected. Both methods are still available and can be selected by setting:
 ``` py
 use_combined_meas = True # or False.
 ```
@@ -154,6 +154,9 @@ The Pendulum factor graph is now working. The hardest part was correctly linking
 
 After seeing the relatively poor performance, I combined the measurement factors into a single custom factor, but the speed did not change as much as I expected.
 
+## 8 June
+
+The custom factor feature was merged into develop, so I pulled down the latest and tested my example. Everything still works.
 
 # Notes
 
@@ -174,7 +177,7 @@ graph.add(gtsam.CustomFactor(UNARY_NOISE, gtsam.KeyVector([1]), partial(error_fu
 
 
 
-* My method - UnicycleExample.py - This example uses a python class to store and access the measurements. I'm not entirely sure how scope works for the error functions, but it appears this method works and may be easier to maintain for more complicated systems.
+* My method - UnicycleExample.py - This example uses a python class to store and access the measurements. I'm not entirely sure how scope works for the error functions, but it appears this method works and may be easier to maintain for more complicated systems. I'm not sure which method will perform better.
 
 ``` py
 @dataclass
