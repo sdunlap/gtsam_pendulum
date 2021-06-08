@@ -41,7 +41,7 @@ I was surprised to see that the original lab (which used sparse matrices) was mu
 
 To determine how much of the slow-down is caused by the custom factors, I set up the same timing test for the UnicycleExample and ran it with a custom factor and with the built-in BetweenFactor. With the custom factor, the same optimization took almost 4 times longer than with BetweenFactor. With this limitation, you could prototype custom factors in python, but for performance, it would be best to port them over to C once they're working. There may be other factors impacting performance, but that will take further research.
 
-### Based on the results from the UnicycleExample, a version of the pendulum that uses compiled C factors could potentially optimize in roughly 2.5 minute.
+### Based on the results from the UnicycleExample, a version of the pendulum that uses compiled C factors could potentially optimize in roughly 2.5 seconds.
 
 
 
