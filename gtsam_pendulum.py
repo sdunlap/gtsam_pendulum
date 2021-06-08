@@ -123,7 +123,7 @@ params = gtsam.LevenbergMarquardtParams()
 
 print('Starting trial')
 
-num_trials = 5
+num_trials = 1
 
 start_time = time.time()
 last_time = start_time
